@@ -96,7 +96,7 @@ namespace BetterJoyForCemu {
         }
 
         void CheckForNewControllersTime(Object source, ElapsedEventArgs e) {
-            if (Config.Value("ProgressiveScan")) {
+            if (Config.GetBool("ProgressiveScan")) {
                 CheckForNewControllers();
             }
         }
@@ -115,19 +115,29 @@ namespace BetterJoyForCemu {
                 enumerate = (hid_device_info)Marshal.PtrToStructure(ptr, typeof(hid_device_info));
 
                 if ((enumerate.product_id == product_l || enumerate.product_id == product_r || enumerate.product_id == product_pro) && !ControllerAlreadyAdded(enumerate.path)) {
-                    switch (enumerate.product_id) {
-                        case product_l:
-                            isLeft = true;
-                            form.AppendTextBox("Left Joy-Con connected.\r\n"); break;
-                        case product_r:
-                            isLeft = false;
-                            form.AppendTextBox("Right Joy-Con connected.\r\n"); break;
-                        case product_pro:
-                            isLeft = true;
-                            form.AppendTextBox("Pro controller connected.\r\n"); break;
-                        default:
-                            form.AppendTextBox("Non Joy-Con Nintendo input device skipped.\r\n"); break;
+                    if (Config.GetBool("ForceProcon"))
+                    {
+                        isLeft = true;
+                        form.AppendTextBox("Pro controller connected.(forced)\r\n");
                     }
+                    else
+                    {
+                        switch (enumerate.product_id)
+                        {
+                            case product_l:
+                                isLeft = true;
+                                form.AppendTextBox("Left Joy-Con connected.\r\n"); break;
+                            case product_r:
+                                isLeft = false;
+                                form.AppendTextBox("Right Joy-Con connected.\r\n"); break;
+                            case product_pro:
+                                isLeft = true;
+                                form.AppendTextBox("Pro controller connected.\r\n"); break;
+                            default:
+                                form.AppendTextBox("Non Joy-Con Nintendo input device skipped.\r\n"); break;
+                        }
+                    }
+                    
 
                     // Add controller to block-list for HidGuardian
                     if (useHIDG) {
@@ -163,7 +173,14 @@ namespace BetterJoyForCemu {
                         break;
                     }
 
-                    j.Add(new Joycon(handle, EnableIMU, EnableLocalize & EnableIMU, 0.05f, isLeft, enumerate.path, j.Count, enumerate.product_id == product_pro, enumerate.serial_number == "000000000001"));
+                    if(Config.GetBool("ForceProcon"))
+                    {
+                        j.Add(new Joycon(handle, EnableIMU, EnableLocalize & EnableIMU, 0.05f, isLeft, enumerate.path, j.Count, true, enumerate.serial_number == "000000000001"));
+                    }
+                    else
+                    {
+                        j.Add(new Joycon(handle, EnableIMU, EnableLocalize & EnableIMU, 0.05f, isLeft, enumerate.path, j.Count, enumerate.product_id == product_pro, enumerate.serial_number == "000000000001"));
+                    }
 
                     foundNew = true;
                     j.Last().form = form;
@@ -174,15 +191,23 @@ namespace BetterJoyForCemu {
                             ii++;
                             if (!v.Enabled) {
                                 System.Drawing.Bitmap temp;
-                                switch (enumerate.product_id) {
-                                    case (product_l):
-                                        temp = Properties.Resources.jc_left_s; break;
-                                    case (product_r):
-                                        temp = Properties.Resources.jc_right_s; break;
-                                    case (product_pro):
-                                        temp = Properties.Resources.pro; break;
-                                    default:
-                                        temp = Properties.Resources.cross; break;
+                                if (Config.GetBool("ForceProcon"))
+                                {
+                                    temp = Properties.Resources.pro;
+                                }
+                                else
+                                {
+                                    switch (enumerate.product_id)
+                                    {
+                                        case (product_l):
+                                            temp = Properties.Resources.jc_left_s; break;
+                                        case (product_r):
+                                            temp = Properties.Resources.jc_right_s; break;
+                                        case (product_pro):
+                                            temp = Properties.Resources.pro; break;
+                                        default:
+                                            temp = Properties.Resources.cross; break;
+                                    }
                                 }
 
                                 v.Invoke(new MethodInvoker(delegate {
@@ -195,6 +220,11 @@ namespace BetterJoyForCemu {
                                 form.loc[ii].Invoke(new MethodInvoker(delegate {
                                     form.loc[ii].Tag = v;
                                     form.loc[ii].Click += new EventHandler(form.locBtnClick);
+                                }));
+
+                                form.cal[ii].Invoke(new MethodInvoker(delegate {
+                                    form.cal[ii].Tag = v;
+                                    form.cal[ii].Click += new EventHandler(form.calBtnClick);
                                 }));
 
                                 break;

@@ -1,4 +1,15 @@
-# BetterJoyForCemu v5 (v6 Nightly)
+# BetterHumbleJoyForCemu (v6 Nightly based)
+Allows humble 3rd party Nintendo Pro Controller compatible controller to be used with [Cemu](http://cemu.info/) using [Cemuhook](https://sshnuke.net/cemuhook/), [Citra](https://citra-emu.org/), and system-wide with generic XInput support.
+Add features to support humble 3rd party Nintendo Pro Controller compatible controller to original BetterJoyForCemu.
+
+# Changelog
+### v0.1
+* Added option to be detected to Nintendo Pro Controller for 3rd party controllers which are detected to Left Joycon.
+* Added Sensor states with bar graphs.
+* Added its own calibration feature for humble noisy 3rd party joypads.
+* Fixed minor things.
+
+# [Original Readme from here] BetterJoyForCemu v5 (v6 Nightly)
 Allows the Nintendo Switch Pro Controller and Joycons to be used with [Cemu](http://cemu.info/) using [Cemuhook](https://sshnuke.net/cemuhook/), [Citra](https://citra-emu.org/), and system-wide with generic XInput support.
 
 If anyone would like to donate (for whatever reason), [you can do so here](https://www.paypal.me/DavidKhachaturov/5). 

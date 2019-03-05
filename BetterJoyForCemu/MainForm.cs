@@ -13,14 +13,28 @@ using System.Windows.Forms;
 using System.Xml.Linq;
 
 namespace BetterJoyForCemu {
-	public partial class MainForm : Form {
-        public List<Button> con, loc;
+    public partial class MainForm : Form {
+        public List<Button> con, loc, cal;
 
-		public MainForm() {
-			InitializeComponent();
+        private System.Drawing.SolidBrush graphBrush;
+        private System.Drawing.Pen centerLinePen;
+        private PictureBox[,] graphs;
+        public MainForm() {
+            InitializeComponent();
 
             con = new List<Button> { con1, con2, con3, con4 };
             loc = new List<Button> { loc1, loc2, loc3, loc4 };
+            cal = new List<Button> { buttonCalibration1, buttonCalibration2, buttonCalibration3, buttonCalibration4 };
+            graphs = new PictureBox[,]
+            {
+                {graph1_AX, graph1_AY, graph1_AZ, graph1_GX, graph1_GY, graph1_GZ},
+                {graph2_AX, graph2_AY, graph2_AZ, graph2_GX, graph2_GY, graph2_GZ},
+                {graph3_AX, graph3_AY, graph3_AZ, graph3_GX, graph3_GY, graph3_GZ},
+                {graph4_AX, graph4_AY, graph4_AZ, graph4_GX, graph4_GY, graph4_GZ}
+            };
+
+            graphBrush = new System.Drawing.SolidBrush(System.Drawing.Color.Red);
+            centerLinePen = new Pen(Color.Black);
         }
 
         private void HideToTray() {
@@ -47,14 +61,15 @@ namespace BetterJoyForCemu {
 		}
 
 		private void MainForm_Load(object sender, EventArgs e) {
+            Config.Init();
             Program.Start();
 
-            Config.Init();
+            passiveScanBox.Checked = Config.GetBool("ProgressiveScan");
+            startInTrayBox.Checked = Config.GetBool("StartInTray");
+            checkBoxForceProcon.Checked = Config.GetBool("ForceProcon");
+            checkBoxShowSensors.Checked = Config.GetBool("ShowSensors");
 
-            passiveScanBox.Checked = Config.Value("ProgressiveScan");
-            startInTrayBox.Checked = Config.Value("StartInTray");
-
-            if (Config.Value("StartInTray")) {
+            if (Config.GetBool("StartInTray")) {
                 HideToTray();
             }
             else {
@@ -86,6 +101,50 @@ namespace BetterJoyForCemu {
             Config.Save("ProgressiveScan", passiveScanBox.Checked);
         }
 
+        public void DrawGraph(int padNum, int axisNum, float max, float value) // min = -max
+        {
+            if (checkBoxShowSensors.Checked)
+            {
+                if (InvokeRequired)
+                {
+                    this.Invoke(new Action<int, int, float, float>(DrawGraph), new object[] { padNum, axisNum, max, value });
+                    return;
+                }
+                PictureBox targetBox = graphs[padNum, axisNum];
+                Graphics targetGraphics = targetBox.CreateGraphics();
+                float centerX = targetBox.ClientRectangle.Width / 2.0f;
+                float topY = 0.0f;
+                float bottomY = (float)targetBox.ClientRectangle.Height;
+                const float heightRatio = 0.8f;
+                float heightMargin = (bottomY - (bottomY * heightRatio)) / 2;
+                float height = (bottomY * heightRatio);
+                //topY + heightMargin;
+                //bottomY - heightMargin;
+                if (value > max)
+                {
+                    value = max;
+                }
+                else if (value < -max)
+                {
+                    value = -max;
+                }
+
+                float width = targetBox.ClientRectangle.Width * Math.Abs(value) / max;
+
+                targetGraphics.Clear(Color.White);
+                if (value >= 0)
+                {
+                    targetGraphics.FillRectangle(this.graphBrush, centerX, topY + heightMargin, width, height);
+                }
+                else
+                {
+                    targetGraphics.FillRectangle(this.graphBrush, centerX - width, topY + heightMargin, width, height);
+                }
+                targetGraphics.DrawLine(centerLinePen, centerX, topY, centerX, bottomY);
+                targetGraphics.Dispose();
+            }
+        }
+
         public void AppendTextBox(string value) { // https://stackoverflow.com/questions/519233/writing-to-a-textbox-from-another-thread
             if (InvokeRequired) {
                 this.Invoke(new Action<string>(AppendTextBox), new object[] { value });
@@ -106,6 +165,30 @@ namespace BetterJoyForCemu {
                 if (button.Tag.GetType() == typeof(Joycon)) {
                     Joycon v = (Joycon) button.Tag;
                     v.SetRumble(20.0f, 400.0f, 1.0f, 300);
+                }
+            }
+        }
+
+        public void calBtnClick(object sender, EventArgs e)
+        {
+            Button bb = sender as Button;
+
+            if (bb.Tag.GetType() == typeof(Button))
+            {
+                Button button = bb.Tag as Button;
+
+                if (button.Tag.GetType() == typeof(Joycon))
+                {
+                    Joycon v = (Joycon)button.Tag;
+                    DialogResult result = MessageBox.Show("Place the controller with the stick facing upward on a flat, stable surface and click OK.", "Calibarte Motion Controls", MessageBoxButtons.OKCancel, MessageBoxIcon.Question);
+                    if (result == DialogResult.OK)
+                    {
+                        Cursor tmp = this.Cursor;
+                        this.Cursor = Cursors.WaitCursor;
+                        v.CalibarteMotionControls();
+                        this.Cursor = tmp;
+                        MessageBox.Show("Calibartion finished", "Calibarte Motion Controls");
+                    }
                 }
             }
         }
@@ -170,6 +253,27 @@ namespace BetterJoyForCemu {
         private void btn_open3rdP_Click(object sender, EventArgs e) {
             _3rdPartyControllers partyForm = new _3rdPartyControllers();
             partyForm.ShowDialog();
+        }
+
+        private void checkBoxShowSensors_CheckedChanged(object sender, EventArgs e)
+        {
+            //274, 142
+            if (checkBoxShowSensors.Checked)
+            {
+                conCntrls.Height = 274;
+                this.Height = 474;
+            }
+            else
+            {
+                conCntrls.Height = 142;
+                this.Height = 335;
+            }
+            Config.Save("ShowSensors", checkBoxShowSensors.Checked);
+        }
+
+        private void checkBoxForceProcon_CheckedChanged(object sender, EventArgs e)
+        {
+            Config.Save("ForceProcon", checkBoxForceProcon.Checked);
         }
 
         void ReenableXinput(Joycon v) {
