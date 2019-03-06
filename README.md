@@ -3,6 +3,12 @@ Allows humble 3rd party Nintendo Pro Controller compatible controller to be used
 Add features to support humble 3rd party Nintendo Pro Controller compatible controller to original BetterJoyForCemu.
 
 # Changelog
+### v1.0
+* Added Simple nosie filter.
+* Fixed accelerator meter converting method.
+* Fixed minor things.
+
+
 ### v0.1
 * Added option to be detected to Nintendo Pro Controller for 3rd party controllers which are detected to Left Joycon.
 * Added Sensor states with bar graphs.

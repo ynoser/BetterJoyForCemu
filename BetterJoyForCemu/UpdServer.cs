@@ -389,11 +389,9 @@ namespace BetterJoyForCemu {
 				if (accel != null) {
 					Array.Copy(BitConverter.GetBytes(accel.Y), 0, outputData, outIdx, 4);
 					outIdx += 4;
-                    //Array.Copy(BitConverter.GetBytes(-accel.Z), 0, outputData, outIdx, 4);
-                    Array.Copy(BitConverter.GetBytes(-accel.Z), 0, outputData, outIdx, 4); // test
+                    Array.Copy(BitConverter.GetBytes(-accel.Z), 0, outputData, outIdx, 4);
                     outIdx += 4;
-					//Array.Copy(BitConverter.GetBytes(accel.X), 0, outputData, outIdx, 4);
-                    Array.Copy(BitConverter.GetBytes(accel.X), 0, outputData, outIdx, 4); // test
+					Array.Copy(BitConverter.GetBytes(accel.X), 0, outputData, outIdx, 4);
                     outIdx += 4;
 				} else {
 					outIdx += 12;
@@ -407,11 +405,9 @@ namespace BetterJoyForCemu {
 				if (gyro != null) {
 					Array.Copy(BitConverter.GetBytes(gyro.Y), 0, outputData, outIdx, 4);
 					outIdx += 4;
-					//Array.Copy(BitConverter.GetBytes(gyro.Z), 0, outputData, outIdx, 4);
-                    Array.Copy(BitConverter.GetBytes(gyro.X), 0, outputData, outIdx, 4); // test
+					Array.Copy(BitConverter.GetBytes(gyro.Z), 0, outputData, outIdx, 4);
                     outIdx += 4;
-					//Array.Copy(BitConverter.GetBytes(gyro.X), 0, outputData, outIdx, 4);
-                    Array.Copy(BitConverter.GetBytes(-gyro.Z), 0, outputData, outIdx, 4); // test
+					Array.Copy(BitConverter.GetBytes(gyro.X), 0, outputData, outIdx, 4);
                     outIdx += 4;
 				} else {
 					outIdx += 12;

@@ -86,13 +86,13 @@ namespace BetterJoyForCemu {
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < 3; i++)
             {
-                GetPrivateProfileString(padMac, "acc_offset_" + (i + 1), "0", sb, 6, deviceConfigPath);
+                GetPrivateProfileString(padMac, "acc_offset_" + (i + 1), "-32768", sb, 7, deviceConfigPath);
                 acc_offset[i] = Int16.Parse(sb.ToString());
-                GetPrivateProfileString(padMac, "gyr_offset_" + (i + 1), "0", sb, 6, deviceConfigPath);
+                GetPrivateProfileString(padMac, "gyr_offset_" + (i + 1), "-32768", sb, 7, deviceConfigPath);
                 gyr_offset[i] = Int16.Parse(sb.ToString());
-                GetPrivateProfileString(padMac, "acc_deadzone_" + (i + 1), "0", sb, 6, deviceConfigPath);
+                GetPrivateProfileString(padMac, "acc_deadzone_" + (i + 1), "-32768", sb, 7, deviceConfigPath);
                 acc_deadzone[i] = Int16.Parse(sb.ToString());
-                GetPrivateProfileString(padMac, "gyr_deadzone_" + (i + 1), "0", sb, 6, deviceConfigPath);
+                GetPrivateProfileString(padMac, "gyr_deadzone_" + (i + 1), "-32768", sb, 7, deviceConfigPath);
                 gyr_deadzone[i] = Int16.Parse(sb.ToString());
             }
         }

@@ -93,14 +93,20 @@ namespace BetterJoyForCemu {
         private bool first_imu_packet = true;
         private bool imu_enabled = false;
         private Int16[] acc_r = { 0, 0, 0 };
+        private float[] acc_f = { 0, 0, 0 };
+        private float[] acc_last = { Int16.MaxValue, Int16.MaxValue, Int16.MaxValue };
         private Int16[] acc_neutral = { 0, 0, 0 };
         private Int16[] acc_sensiti = { 0, 0, 0 };
         private Vector3 acc_g;
+        private NoiseFilter[] acc_filter = new NoiseFilter[] { new NoiseFilter(), new NoiseFilter(), new NoiseFilter() };
 
         private Int16[] gyr_r = { 0, 0, 0 };
+        private float[] gyr_f = { 0, 0, 0 };
+        private float[] gyr_last = { Int16.MaxValue, Int16.MaxValue, Int16.MaxValue };
         private Int16[] gyr_neutral = { 0, 0, 0 };
         private Int16[] gyr_sensiti = { 0, 0, 0 };
         private Vector3 gyr_g;
+        private NoiseFilter[] gyr_filter = new NoiseFilter[] { new NoiseFilter(), new NoiseFilter(), new NoiseFilter() };
 
         private Int16[] pro_hor_offset = { -710, 0, 0 };
         private Int16[] left_hor_offset = { 0, 0, 0 };
@@ -410,115 +416,6 @@ namespace BetterJoyForCemu {
 			state = state_.NOT_ATTACHED;
 		}
 
-        public void CalibarteMotionControls()
-        {
-            acc_offset = new Int16[] { 0, 0, 0 };
-            gyr_offset = new Int16[] { 0, 0, 0 };
-            acc_deadzone = new Int16[] { 0, 0, 0 };
-            gyr_deadzone = new Int16[] { 0, 0, 0 };
-            acc_sum = new Int32[] { 0, 0, 0 };
-            gyr_sum = new Int32[] { 0, 0, 0 };
-            acc_min = new Int16[] { 30000, 30000, 30000 };
-            gyr_min = new Int16[] { 30000, 30000, 30000 };
-            acc_max = new Int16[] { -30000, -30000, -30000 };
-            gyr_max = new Int16[] { -30000, -30000, -30000 };
-            isCalibrating = true;
-            while(true)
-            {
-                if (!isCalibrating)
-                    break;
-                Thread.Sleep(100);
-            }
-
-            for (int i = 0; i < 3; i++)
-            {
-                acc_offset[i] = (Int16)(acc_sum[i] / (float)calibrationLimit);
-                gyr_offset[i] = (Int16)(gyr_sum[i] / (float)calibrationLimit);
-                if(Math.Abs(acc_min[i] - acc_offset[i]) > Math.Abs(acc_max[i] - acc_offset[i]))
-                {
-                    acc_deadzone[i] = (Int16)Math.Abs(acc_min[i] - acc_offset[i]);
-                }
-                else
-                {
-                    acc_deadzone[i] = (Int16)Math.Abs(acc_max[i] - acc_offset[i]);
-                }
-
-                if (Math.Abs(gyr_min[i] - gyr_offset[i]) > Math.Abs(gyr_max[i] - gyr_offset[i]))
-                {
-                    gyr_deadzone[i] = (Int16)Math.Abs(gyr_min[i] - gyr_offset[i]);
-                }
-                else
-                {
-                    gyr_deadzone[i] = (Int16)Math.Abs(gyr_max[i] - gyr_offset[i]);
-                }
-
-                acc_deadzone[i] = (Int16)(acc_deadzone[i] * 1.7f);
-                gyr_deadzone[i] = (Int16)(gyr_deadzone[i] * 1.7f);
-            }
-            isCalibrating = true; // Drawing graph conflict with line below
-            Thread.Sleep(1000);
-            Config.SavePadCalibrationData(this.PadMacAddress.ToString(), acc_offset, gyr_offset, acc_deadzone, gyr_deadzone);
-            isCalibrating = false;
-        }
-        private bool isCalibrating = false;
-        private const int calibrationLimit = 700;
-        private int calibrationCounter = 0;
-
-        private Int16[] acc_offset = new Int16[] { 0, 0, 0 };
-        private Int16[] gyr_offset = new Int16[] { 0, 0, 0 };
-        private Int16[] acc_deadzone = new Int16[] { 0, 0, 0 };
-        private Int16[] gyr_deadzone = new Int16[] { 0, 0, 0 };
-
-        private Int32[] acc_sum;
-        private Int32[] gyr_sum;
-        private Int16[] acc_min;
-        private Int16[] gyr_min;
-        private Int16[] acc_max;
-        private Int16[] gyr_max;
-
-        private void calibrate(byte[] report_buf, int n = 0)
-        {
-            if(calibrationLimit <= calibrationCounter)
-            {
-                calibrationCounter = 0;
-                isCalibrating = false;
-                return;
-            }
-            calibrationCounter++;
-            gyr_r[0] = (Int16)(report_buf[19 + n * 12] | ((report_buf[20 + n * 12] << 8) & 0xff00));
-            gyr_r[1] = (Int16)(report_buf[21 + n * 12] | ((report_buf[22 + n * 12] << 8) & 0xff00));
-            gyr_r[2] = (Int16)(report_buf[23 + n * 12] | ((report_buf[24 + n * 12] << 8) & 0xff00));
-            acc_r[0] = (Int16)(report_buf[13 + n * 12] | ((report_buf[14 + n * 12] << 8) & 0xff00));
-            acc_r[1] = (Int16)(report_buf[15 + n * 12] | ((report_buf[16 + n * 12] << 8) & 0xff00));
-            acc_r[2] = (Int16)(report_buf[17 + n * 12] | ((report_buf[18 + n * 12] << 8) & 0xff00));
-
-            Int16[] offset = hor_offset; // make all zero when on flat surface
-
-            for (int i = 0; i < 3; ++i)
-            {
-                if (acc_r[i] - offset[i] > acc_max[i])
-                {
-                    acc_max[i] = (Int16)(acc_r[i] - offset[i]);
-                }
-                else if (acc_r[i] - offset[i] < acc_min[i])
-                {
-                    acc_min[i] = (Int16)(acc_r[i] - offset[i]);
-                }
-
-                if (gyr_r[i] - gyr_neutral[i] > gyr_max[i])
-                {
-                    gyr_max[i] = (Int16)(gyr_r[i] - gyr_neutral[i]);
-                }
-                else if (gyr_r[i] - gyr_neutral[i] < gyr_min[i])
-                {
-                    gyr_min[i] = (Int16)(gyr_r[i] - gyr_neutral[i]);
-                }
-
-                acc_sum[i] += acc_r[i] - offset[i];
-                gyr_sum[i] += gyr_r[i] - gyr_neutral[i];
-            }
-        }
-
         private byte ts_en;
 		private int ReceiveRaw() {
             if (handle == IntPtr.Zero) return -2;
@@ -785,10 +682,123 @@ namespace BetterJoyForCemu {
 			return 0;
 		}
 
+        public void CalibarteMotionControls()
+        {
+            acc_neutral = new Int16[] { 0, 0, 0 };
+            gyr_neutral = new Int16[] { 0, 0, 0 };
+            acc_deadzone = new Int16[] { 0, 0, 0 };
+            gyr_deadzone = new Int16[] { 0, 0, 0 };
+            acc_sum = new Int32[] { 0, 0, 0 };
+            gyr_sum = new Int32[] { 0, 0, 0 };
+            acc_min = new Int16[] { 30000, 30000, 30000 };
+            gyr_min = new Int16[] { 30000, 30000, 30000 };
+            acc_max = new Int16[] { -30000, -30000, -30000 };
+            gyr_max = new Int16[] { -30000, -30000, -30000 };
+            isCalibrating = true;
+            while (true)
+            {
+                if (!isCalibrating)
+                    break;
+                Thread.Sleep(100);
+            }
+
+            for (int i = 0; i < 3; i++)
+            {
+                acc_neutral[i] = (Int16)(acc_sum[i] / (float)calibrationLimit);
+                gyr_neutral[i] = (Int16)(gyr_sum[i] / (float)calibrationLimit);
+                if (Math.Abs(acc_min[i] - acc_neutral[i]) > Math.Abs(acc_max[i] - acc_neutral[i]))
+                {
+                    acc_deadzone[i] = (Int16)Math.Abs(acc_min[i] - acc_neutral[i]);
+                }
+                else
+                {
+                    acc_deadzone[i] = (Int16)Math.Abs(acc_max[i] - acc_neutral[i]);
+                }
+
+                if (Math.Abs(gyr_min[i] - gyr_neutral[i]) > Math.Abs(gyr_max[i] - gyr_neutral[i]))
+                {
+                    gyr_deadzone[i] = (Int16)Math.Abs(gyr_min[i] - gyr_neutral[i]);
+                }
+                else
+                {
+                    gyr_deadzone[i] = (Int16)Math.Abs(gyr_max[i] - gyr_neutral[i]);
+                }
+
+                // TODO: make constant 8.0f to be set;
+                acc_deadzone[i] = (Int16)(acc_deadzone[i] * 8f);
+                gyr_deadzone[i] = (Int16)(gyr_deadzone[i] * 8f);
+            }
+            isCalibrating = true; // Drawing graph conflict with line below
+            Thread.Sleep(500);
+            Config.SavePadCalibrationData(this.PadMacAddress.ToString(), acc_neutral, gyr_neutral, acc_deadzone, gyr_deadzone);
+            Thread.Sleep(500);
+            isCalibrating = false;
+        }
+        private bool isCalibrating = false;
+        private const int calibrationLimit = 700;
+        private int calibrationCounter = 0;
+
+        //private Int16[] acc_neutral = new Int16[] { 0, 0, 0 };
+        //private Int16[] gyr_neutral = new Int16[] { 0, 0, 0 };
+        private Int16[] acc_deadzone = new Int16[] { 0, 0, 0 };
+        private Int16[] gyr_deadzone = new Int16[] { 0, 0, 0 };
+
+        private Int32[] acc_sum;
+        private Int32[] gyr_sum;
+        private Int16[] acc_min;
+        private Int16[] gyr_min;
+        private Int16[] acc_max;
+        private Int16[] gyr_max;
+
+        private void calibrate(byte[] report_buf, int n = 0)
+        {
+            if (calibrationLimit <= calibrationCounter)
+            {
+                calibrationCounter = 0;
+                isCalibrating = false;
+                return;
+            }
+            calibrationCounter++;
+            gyr_r[0] = (Int16)(report_buf[19 + n * 12] | ((report_buf[20 + n * 12] << 8) & 0xff00));
+            gyr_r[1] = (Int16)(report_buf[21 + n * 12] | ((report_buf[22 + n * 12] << 8) & 0xff00));
+            gyr_r[2] = (Int16)(report_buf[23 + n * 12] | ((report_buf[24 + n * 12] << 8) & 0xff00));
+            acc_r[0] = (Int16)(report_buf[13 + n * 12] | ((report_buf[14 + n * 12] << 8) & 0xff00));
+            acc_r[1] = (Int16)(report_buf[15 + n * 12] | ((report_buf[16 + n * 12] << 8) & 0xff00));
+            acc_r[2] = (Int16)(report_buf[17 + n * 12] | ((report_buf[18 + n * 12] << 8) & 0xff00));
+
+            Int16[] offset = hor_offset; // make all zero when on flat surface
+
+            for (int i = 0; i < 3; ++i)
+            {
+                if (acc_r[i] - offset[i] > acc_max[i])
+                {
+                    acc_max[i] = (Int16)(acc_r[i] - offset[i]);
+                }
+                else if (acc_r[i] - offset[i] < acc_min[i])
+                {
+                    acc_min[i] = (Int16)(acc_r[i] - offset[i]);
+                }
+
+                if (gyr_r[i] > gyr_max[i])
+                {
+                    gyr_max[i] = gyr_r[i];
+                }
+                else if (gyr_r[i] < gyr_min[i])
+                {
+                    gyr_min[i] = gyr_r[i];
+                }
+
+                acc_sum[i] += acc_r[i] - offset[i];
+                gyr_sum[i] += gyr_r[i];
+            }
+        }
+
         private const int GraphSkipNum = 30;
         private int graphSkipCounter = 0;
-        private float accMax = 1.0f;
-        private float gyrMax = 100.0f;
+        private float accMax = 2.0f;
+        private float gyrMax = 200.0f;
+        //private float accMax = 5.0f;
+        //private float gyrMax = 500.0f;
         private void ExtractIMUValues(byte[] report_buf, int n = 0) {
 			gyr_r[0] = (Int16)(report_buf[19 + n * 12] | ((report_buf[20 + n * 12] << 8) & 0xff00));
 			gyr_r[1] = (Int16)(report_buf[21 + n * 12] | ((report_buf[22 + n * 12] << 8) & 0xff00));
@@ -797,33 +807,49 @@ namespace BetterJoyForCemu {
 			acc_r[1] = (Int16)(report_buf[15 + n * 12] | ((report_buf[16 + n * 12] << 8) & 0xff00));
 			acc_r[2] = (Int16)(report_buf[17 + n * 12] | ((report_buf[18 + n * 12] << 8) & 0xff00));
 
-			Int16[] offset;
-			/*if (isPro)
+            for (int i = 0; i < 3; i++)
+            {
+                gyr_filter[i].Process(gyr_r[i]);
+                gyr_f[i] = gyr_filter[i].GetValue();
+
+                acc_filter[i].Process(acc_r[i]);
+                acc_f[i] = acc_filter[i].GetValue();
+            }
+
+            Int16[] offset;
+			/* if (isPro)
 				offset = pro_hor_offset;
 			else if (isLeft)
 				offset = left_hor_offset;
 			else
-				offset = right_hor_offset; I couldn't understand these values*/
-            offset = hor_offset; // make all values zero when on flat surface
-            // or just zero offsets, you can see gravity.
+				offset = right_hor_offset; // I couldn't understand these values*/
+            //offset = hor_offset; // make all values zero when on flat surface
+            offset = left_hor_offset; // or just zero offsets, you can see gravity.
 
             for (int i = 0; i < 3; ++i) {
-                if(acc_deadzone[i] > Math.Abs(acc_r[i] - offset[i] - acc_offset[i]))
+                if (acc_deadzone[i] > Math.Abs(acc_last[i] - acc_f[i]))
                 {
-                    acc_r[i] = (Int16)(offset[i] + acc_offset[i]);
+                    acc_f[i] = acc_last[i];
+                }
+                else
+                {
+                    acc_last[i] = acc_f[i];
                 }
 
-                if (gyr_deadzone[i] > Math.Abs(gyr_r[i] - gyr_neutral[i] - gyr_offset[i]))
+                if (gyr_deadzone[i] > Math.Abs(gyr_last[i] - gyr_f[i]))
                 {
-                    gyr_r[i] = (Int16)(gyr_neutral[i] + gyr_offset[i]);
+                    gyr_f[i] = gyr_last[i];
                 }
-
+                else
+                {
+                    gyr_last[i] = gyr_f[i];
+                }
 
                 switch (i) {
 					case 0:
-						acc_g.X = (acc_r[i] - offset[i] - acc_offset[i]) * (1.0f / (acc_sensiti[i] - acc_neutral[i])) * 4.0f;
-						gyr_g.X = (gyr_r[i] - gyr_neutral[i] - gyr_offset[i]) * (816.0f / (gyr_sensiti[i] - gyr_neutral[i]));
-                        
+                        acc_g.X = (acc_f[i] - offset[i] - acc_neutral[i]) * (4.0f / (acc_sensiti[i] - acc_neutral[i]));
+                        gyr_g.X = (gyr_f[i] - gyr_neutral[i]) * (816.0f / (gyr_sensiti[i] - gyr_neutral[i]));
+
                         if (GraphSkipNum == graphSkipCounter)
                         {
                             form.DrawGraph(this.PadId, 0 + i, accMax, acc_g.X);
@@ -831,8 +857,8 @@ namespace BetterJoyForCemu {
                         }
                         break;
 					case 1:
-						acc_g.Y = (!isLeft ? -1 : 1) * (acc_r[i] - offset[i] - acc_offset[i]) * (1.0f / (acc_sensiti[i] - acc_neutral[i])) * 4.0f;
-						gyr_g.Y = -(!isLeft ? -1 : 1) * (gyr_r[i] - gyr_neutral[i] - gyr_offset[i]) * (816.0f / (gyr_sensiti[i] - gyr_neutral[i]));
+                        acc_g.Y = (!isLeft ? -1 : 1) * (acc_f[i] - offset[i] - acc_neutral[i]) * (4.0f / (acc_sensiti[i] - acc_neutral[i]));
+                        gyr_g.Y = -(!isLeft ? -1 : 1) * (gyr_f[i] - gyr_neutral[i]) * (816.0f / (gyr_sensiti[i] - gyr_neutral[i]));
                         if (GraphSkipNum == graphSkipCounter)
                         {
                             form.DrawGraph(this.PadId, 0 + i, accMax, acc_g.Y);
@@ -840,8 +866,8 @@ namespace BetterJoyForCemu {
                         }
                         break;
 					case 2:
-						acc_g.Z = (!isLeft ? -1 : 1) * (acc_r[i] - offset[i] - acc_offset[i]) * (1.0f / (acc_sensiti[i] - acc_neutral[i])) * 4.0f;
-                        gyr_g.Z = -(!isLeft ? -1 : 1) * (gyr_r[i] - gyr_neutral[i] - gyr_offset[i]) * (816.0f / (gyr_sensiti[i] - gyr_neutral[i]));
+                        acc_g.Z = (!isLeft ? -1 : 1) * (acc_f[i] - offset[i] - acc_neutral[i]) * (4.0f / (acc_sensiti[i] - acc_neutral[i]));
+                        gyr_g.Z = -(!isLeft ? -1 : 1) * (gyr_f[i] - gyr_neutral[i]) * (816.0f / (gyr_sensiti[i] - gyr_neutral[i]));
                         if (GraphSkipNum == graphSkipCounter)
                         {
                             form.DrawGraph(this.PadId, 0 + i, accMax, acc_g.Z);
@@ -1049,7 +1075,26 @@ namespace BetterJoyForCemu {
                 PrintArray(gyr_neutral, len: 3, d: DebugType.IMU, format: "User gyro neutral position: {0:S}");
                 PrintArray(gyr_sensiti, len: 3, d: DebugType.IMU, format: "User gyro sensitivity special coeff: {0:S}");
             }
-            Config.LoadPadCalibrationData(this.PadMacAddress.ToString(), out acc_offset, out gyr_offset, out acc_deadzone, out gyr_deadzone);
+            Int16[] tmp_acc_neutral;
+            Int16[] tmp_gyr_neutral;
+            Int16[] tmp_acc_deadzone;
+            Int16[] tmp_gyr_deadzone;
+            bool calibration_data_available = false;
+            Config.LoadPadCalibrationData(this.PadMacAddress.ToString(), out tmp_acc_neutral, out tmp_gyr_neutral, out tmp_acc_deadzone, out tmp_gyr_deadzone);
+            for(int i=0; i<3; i++)
+            {
+                if(tmp_acc_neutral[i] != Int16.MinValue)
+                {
+                    calibration_data_available = true;
+                }
+            }
+            if(calibration_data_available)
+            {
+                acc_neutral = tmp_acc_neutral;
+                gyr_neutral = tmp_gyr_neutral;
+                acc_deadzone = tmp_acc_deadzone;
+                gyr_deadzone = tmp_gyr_deadzone;
+            }
         }
 
 		private byte[] ReadSPI(byte addr1, byte addr2, uint len, bool print = false) {
