@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Nefarius.ViGEm.Client;
 using Nefarius.ViGEm.Client.Targets;
 using Nefarius.ViGEm.Client.Targets.Xbox360;
+using System.Text;
 
 namespace BetterJoyForCemu {
     public class Joycon {
@@ -416,13 +417,37 @@ namespace BetterJoyForCemu {
 			state = state_.NOT_ATTACHED;
 		}
 
+        private String bytes2string(byte[] data)
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.Append("[ ");
+            foreach (var item in data)
+            {
+                sb.Append(string.Format("{0:X2} ", item));
+            }
+            sb.AppendLine("]");
+            return sb.ToString();
+        }
+
+        public void SetDebugPadMsg()
+        {
+            isDebugingPadMsg = true;
+        }
+
         private byte ts_en;
+        private bool isDebugingPadMsg = false;
 		private int ReceiveRaw() {
             if (handle == IntPtr.Zero) return -2;
             HIDapi.hid_set_nonblocking(handle, 1);
 			byte[] raw_buf = new byte[report_len];
 			int ret = HIDapi.hid_read_timeout(handle, raw_buf, new UIntPtr(report_len), 5000);
 			if (ret > 0) {
+                if(isDebugingPadMsg)
+                {
+                    //form.AppendTextBox(bytes2string(raw_buf));
+                    PrintArray(raw_buf, DebugType.IMU, format: "Joypad received data: {0:S}");
+                    isDebugingPadMsg = false;
+                }
                 // Process packets as soon as they come
                 for (int n = 0; n < 3; n++) {
                     if(isCalibrating)
@@ -963,15 +988,31 @@ namespace BetterJoyForCemu {
 
 		private void dump_calibration_data() {
 			byte[] buf_ = ReadSPI(0x80, (isLeft ? (byte)0x12 : (byte)0x1d), 9); // get user calibration data if possible
-			bool found = false;
+            bool found = false;
 			for (int i = 0; i < 9; ++i) {
 				if (buf_[i] != 0xff) {
-					form.AppendTextBox("Using user stick calibration data." + (isLeft ? "(Left)" : "(Right)") + "\r\n");
-					found = true;
+                    found = true;
 					break;
 				}
 			}
-			if (!found) {
+
+            // but if the values are all zero, there might be no user calibration data
+            for (int i = 0; i < 9; ++i)
+            {
+                if (buf_[i] != 0x00)
+                    break;
+                if(i+1 == 9)
+                {
+                    found = false;
+                }
+            }
+
+            if (found)
+            {
+                form.AppendTextBox("Using user stick calibration data." + (isLeft ? "(Left)" : "(Right)") + "\r\n");
+            }
+			else
+            {
 				form.AppendTextBox("Using factory stick calibration data." + (isLeft ? "(Left)" : "(Right)") + "\r\n");
 				buf_ = ReadSPI(0x60, (isLeft ? (byte)0x3d : (byte)0x46), 9); // get user calibration data if possible
 			}
@@ -982,20 +1023,40 @@ namespace BetterJoyForCemu {
 			stick_cal[isLeft ? 4 : 0] = (UInt16)((buf_[7] << 8) & 0xF00 | buf_[6]); // X Axis Min below center
 			stick_cal[isLeft ? 5 : 1] = (UInt16)((buf_[8] << 4) | (buf_[7] >> 4));  // Y Axis Min below center
 
-			PrintArray(stick_cal, len: 6, start: 0, format: "Stick calibration data" + (isLeft ? "(Left)" : "(Right)") + ": {0:S}");
+			PrintArray(stick_cal, len: 6, d: DebugType.IMU, start: 0, format: "Stick calibration data" + (isLeft ? "(Left)" : "(Right)") + ": {0:S}");
 
-			if (isPro) {
+            buf_ = ReadSPI(0x60, (isLeft ? (byte)0x86 : (byte)0x98), 16);
+            deadzone = (UInt16)((buf_[4] << 8) & 0xF00 | buf_[3]);
+            DebugAppendText("Stick deadzone" + (isLeft ? "(Left)" : "(Right)") + " : " + deadzone + "\r\n", DebugType.IMU);
+
+            if (isPro) {
 				buf_ = ReadSPI(0x80, (!isLeft ? (byte)0x12 : (byte)0x1d), 9); // get user calibration data if possible
 				found = false;
 				for (int i = 0; i < 9; ++i) {
 					if (buf_[i] != 0xff) {
-						form.AppendTextBox("Using user stick calibration data.(Right)\r\n");
 						found = true;
 						break;
 					}
 				}
-				if (!found) {
-					form.AppendTextBox("Using factory stick calibration data.(Right)\r\n");
+
+                // but if the values are all zero, there might be no user calibration data
+                for (int i = 0; i < 9; ++i)
+                {
+                    if (buf_[i] != 0x00)
+                        break;
+                    if (i + 1 == 9)
+                    {
+                        found = false;
+                    }
+                }
+
+                if (found)
+                {
+                    form.AppendTextBox("Using user stick calibration data.(Right)\r\n");
+                }
+                else
+                {
+                    form.AppendTextBox("Using factory stick calibration data.(Right)\r\n");
 					buf_ = ReadSPI(0x60, (!isLeft ? (byte)0x3d : (byte)0x46), 9); // get user calibration data if possible
 				}
 				stick2_cal[!isLeft ? 0 : 2] = (UInt16)((buf_[1] << 8) & 0xF00 | buf_[0]); // X Axis Max above center
@@ -1005,14 +1066,15 @@ namespace BetterJoyForCemu {
 				stick2_cal[!isLeft ? 4 : 0] = (UInt16)((buf_[7] << 8) & 0xF00 | buf_[6]); // X Axis Min below center
 				stick2_cal[!isLeft ? 5 : 1] = (UInt16)((buf_[8] << 4) | (buf_[7] >> 4));  // Y Axis Min below center
 
-				PrintArray(stick2_cal, len: 6, start: 0, format: "Stick calibration data(Right): {0:S}");
+				PrintArray(stick2_cal, len: 6, d: DebugType.IMU, start: 0, format: "Stick calibration data(Right): {0:S}");
 
 				buf_ = ReadSPI(0x60, (!isLeft ? (byte)0x86 : (byte)0x98), 16);
 				deadzone2 = (UInt16)((buf_[4] << 8) & 0xF00 | buf_[3]);
-			}
+                DebugAppendText("Stick deadzone(Right) : " + deadzone2 + "\r\n", DebugType.IMU);
+            }
 
-			buf_ = ReadSPI(0x60, (isLeft ? (byte)0x86 : (byte)0x98), 16);
-			deadzone = (UInt16)((buf_[4] << 8) & 0xF00 | buf_[3]);
+			//buf_ = ReadSPI(0x60, (isLeft ? (byte)0x86 : (byte)0x98), 16);
+			//deadzone = (UInt16)((buf_[4] << 8) & 0xF00 | buf_[3]);
 
             buf_ = ReadSPI(0x60, 0x80, 6);
             hor_offset[0] = (Int16)(buf_[0] | ((buf_[1] << 8) & 0xff00));
@@ -1041,8 +1103,10 @@ namespace BetterJoyForCemu {
 			gyr_sensiti[1] = (Int16)(buf_[2] | ((buf_[3] << 8) & 0xff00));
 			gyr_sensiti[2] = (Int16)(buf_[4] | ((buf_[5] << 8) & 0xff00));
 
-			// This is an extremely messy way of checking to see whether there is user stick calibration data present, but I've seen conflicting user calibration data on blank Joy-Cons. Worth another look eventually.
-			if (gyr_neutral[0] + gyr_neutral[1] + gyr_neutral[2] == -3 || Math.Abs(gyr_neutral[0]) > 100 || Math.Abs(gyr_neutral[1]) > 100 || Math.Abs(gyr_neutral[2]) > 100) {
+            // This is an extremely messy way of checking to see whether there is user stick calibration data present, but I've seen conflicting user calibration data on blank Joy-Cons. Worth another look eventually.
+            if (gyr_neutral[0] + gyr_neutral[1] + gyr_neutral[2] == -3 || Math.Abs(gyr_neutral[0]) > 100 || Math.Abs(gyr_neutral[1]) > 100 || Math.Abs(gyr_neutral[2]) > 100 ||
+                // sensitivity values should not be zero
+                (acc_sensiti[0] == 0 && acc_sensiti[1] == 0 && acc_sensiti[2] == 0) || (gyr_sensiti[0] == 0 && gyr_sensiti[1] == 0 && gyr_sensiti[2] == 0)) {
 				buf_ = ReadSPI(0x60, 0x20, 10);
 				acc_neutral[0] = (Int16)(buf_[0] | ((buf_[1] << 8) & 0xff00));
 				acc_neutral[1] = (Int16)(buf_[2] | ((buf_[3] << 8) & 0xff00));
@@ -1116,11 +1180,20 @@ namespace BetterJoyForCemu {
 		private void PrintArray<T>(T[] arr, DebugType d = DebugType.NONE, uint len = 0, uint start = 0, string format = "{0:S}") {
 			if (d != debug_type && debug_type != DebugType.ALL) return;
 			if (len == 0) len = (uint)arr.Length;
-			string tostr = "";
+			string tostr = "{ ";
 			for (int i = 0; i < len; ++i) {
-				tostr += string.Format((arr[0] is byte) ? "{0:X2} " : ((arr[0] is float) ? "{0:F} " : "{0:D} "), arr[i + start]);
-			}
-			DebugPrint(string.Format(format, tostr), d);
+				tostr += string.Format((arr[0] is byte) ? "{0:X2}" : ((arr[0] is float) ? "{0:F} " : "{0:D} "), arr[i + start]);
+                if (i + 1 < len)
+                    tostr += ", ";
+            }
+            tostr += " }";
+            DebugPrint(string.Format(format, tostr), d);
 		}
+
+        private void DebugAppendText(string msg, DebugType d = DebugType.NONE)
+        {
+            if (d != debug_type && debug_type != DebugType.ALL) return;
+            form.AppendTextBox(msg);
+        }
 	}
 }
