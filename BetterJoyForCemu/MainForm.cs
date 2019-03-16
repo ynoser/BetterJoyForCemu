@@ -79,6 +79,7 @@ namespace BetterJoyForCemu {
 
 		private void MainForm_FormClosing(object sender, FormClosingEventArgs e) {
             try {
+                this.stopDrawingGraphs = true;
                 Program.Stop();
                 Environment.Exit(0);
             } catch { }
@@ -103,7 +104,7 @@ namespace BetterJoyForCemu {
 
         public void DrawGraph(int padNum, int axisNum, float max, float value) // min = -max
         {
-            if (checkBoxShowSensors.Checked && !isCalibrating)
+            if (!stopDrawingGraphs && checkBoxShowSensors.Checked)
             {
                 if (InvokeRequired)
                 {
@@ -170,14 +171,14 @@ namespace BetterJoyForCemu {
             }
         }
 
-        private bool isCalibrating = false;
+        private bool stopDrawingGraphs = false;
         public void calBtnClick(object sender, EventArgs e)
         {
             Button bb = sender as Button;
 
             if (bb.Tag.GetType() == typeof(Button))
             {
-                isCalibrating = true;
+                stopDrawingGraphs = true;
                 checkBoxShowSensors.Enabled = false;
                 Button button = bb.Tag as Button;
 
@@ -187,7 +188,7 @@ namespace BetterJoyForCemu {
                     form.ShowDialog();
                 }
 
-                isCalibrating = false;
+                stopDrawingGraphs = false;
             }
         }
 

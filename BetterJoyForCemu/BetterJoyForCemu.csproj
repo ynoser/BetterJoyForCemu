@@ -7,7 +7,7 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{1BF709E9-C133-41DF-933A-C9FF3F664C7B}</ProjectGuid>
-    <OutputType>Exe</OutputType>
+    <OutputType>WinExe</OutputType>
     <RootNamespace>BetterJoyForCemu</RootNamespace>
     <AssemblyName>BetterJoyForCemu</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>

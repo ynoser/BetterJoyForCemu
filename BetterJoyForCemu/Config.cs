@@ -66,7 +66,7 @@ namespace BetterJoyForCemu {
             return executingAssemblyPath;
         }
 
-        public static void SavePadCalibrationData(string padMac, Int16[] acc_offset, Int16[] gyr_offset, Int16[] acc_deadzone, Int16[] gyr_deadzone)
+        public static void SaveIMUCalibrationData(string padMac, Int16[] acc_offset, Int16[] gyr_offset, Int16[] acc_deadzone, Int16[] gyr_deadzone)
         {
             for (int i=0; i<3; i++)
             {
@@ -77,7 +77,7 @@ namespace BetterJoyForCemu {
             }
         }
 
-        public static void LoadPadCalibrationData(string padMac, out Int16[] acc_offset, out Int16[] gyr_offset, out Int16[] acc_deadzone, out Int16[] gyr_deadzone)
+        public static void LoadIMUCalibrationData(string padMac, out Int16[] acc_offset, out Int16[] gyr_offset, out Int16[] acc_deadzone, out Int16[] gyr_deadzone)
         {
             acc_offset = new Int16[3];
             gyr_offset = new Int16[3];
@@ -94,6 +94,48 @@ namespace BetterJoyForCemu {
                 acc_deadzone[i] = Int16.Parse(sb.ToString());
                 GetPrivateProfileString(padMac, "gyr_deadzone_" + (i + 1), "-32768", sb, 7, deviceConfigPath);
                 gyr_deadzone[i] = Int16.Parse(sb.ToString());
+            }
+        }
+
+        public static void SaveStickCenterCalibrationData(string padMac, int stickNumber, UInt16[] centerValue, UInt16 deadzone)
+        {
+            for (int i = 0; i < 2; i++)
+            {
+                WritePrivateProfileString(padMac, "stick_" + stickNumber + "_center_" + i, centerValue[i].ToString(), deviceConfigPath);
+            }
+            WritePrivateProfileString(padMac, "stick_" + stickNumber + "_deadzone", deadzone.ToString(), deviceConfigPath);
+        }
+
+        public static void LoadStickCenterCalibrationData(string padMac, int stickNumber, out UInt16[] centerValue, out UInt16 deadzone)
+        {
+            centerValue = new UInt16[2];
+            deadzone = new UInt16();
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < 2; i++)
+            {
+                GetPrivateProfileString(padMac, "stick_" + stickNumber + "_center_" + i, "0", sb, 7, deviceConfigPath);
+                centerValue[i] = UInt16.Parse(sb.ToString());
+            }
+            GetPrivateProfileString(padMac, "stick_" + stickNumber + "_deadzone", "0", sb, 7, deviceConfigPath);
+            deadzone = UInt16.Parse(sb.ToString());
+        }
+
+        public static void SaveStickRoundCalibrationData(string padMac, int stickNumber, UInt16[] calibrationValue)
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                WritePrivateProfileString(padMac, "stick_" + stickNumber + "_round_" + i, calibrationValue[i].ToString(), deviceConfigPath);
+            }
+        }
+
+        public static void LoadStickRoundCalibrationData(string padMac, int stickNumber, out UInt16[] calibrationValue)
+        {
+            calibrationValue = new UInt16[4];
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < 4; i++)
+            {
+                GetPrivateProfileString(padMac, "stick_" + stickNumber + "_round_" + i, "0", sb, 7, deviceConfigPath);
+                calibrationValue[i] = UInt16.Parse(sb.ToString());
             }
         }
     }

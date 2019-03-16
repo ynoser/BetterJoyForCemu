@@ -52,5 +52,35 @@ namespace BetterJoyForCemu
                 this.buttonStickRightCalibrate.Enabled = true;
             }
         }
+
+        private void buttonStick1stCalibrate_Click(object sender, EventArgs e)
+        {
+            StickCalibrate_Click(false);
+        }
+
+        private void buttonStick2ndCalibrate_Click(object sender, EventArgs e)
+        {
+            StickCalibrate_Click(true);
+        }
+
+        private void StickCalibrate_Click(bool isSecondStick)
+        {
+            Joycon v = this.joycon;
+
+            DialogResult result = MessageBox.Show("Leave the stick centered, then click OK to continue.", "Calibarte Stick", MessageBoxButtons.OKCancel, MessageBoxIcon.Question);
+            if (result == DialogResult.OK)
+            {
+                v.BeginCalibrateStick(isSecondStick, Joycon.CalibratingStickPhase.CENTER);
+                //result = MessageBox.Show("Leave the stick centered, then click OK.", "Calibarte Stick", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+                System.Threading.Thread.Sleep(1000);
+                v.FinishCalibrateStick(Joycon.CalibratingStickPhase.CENTER);
+                MessageBox.Show("Center calibartion finished, click OK to continue", "Calibarte Stick");
+
+                v.BeginCalibrateStick(isSecondStick, Joycon.CalibratingStickPhase.ROUND);
+                result = MessageBox.Show("Move the stick all axises through its complete range, then click OK.", "Calibarte Stick", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+                v.FinishCalibrateStick(Joycon.CalibratingStickPhase.ROUND);
+                MessageBox.Show("Analog stick calibartion finished", "Calibarte Stick");
+            }
+        }
     }
 }

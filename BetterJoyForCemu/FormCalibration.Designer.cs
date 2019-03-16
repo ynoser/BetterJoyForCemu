@@ -74,8 +74,9 @@
             this.buttonStickLeftCalibrate.Name = "buttonStickLeftCalibrate";
             this.buttonStickLeftCalibrate.Size = new System.Drawing.Size(98, 23);
             this.buttonStickLeftCalibrate.TabIndex = 1;
-            this.buttonStickLeftCalibrate.Text = "Begin(Left)";
+            this.buttonStickLeftCalibrate.Text = "Begin(1st)";
             this.buttonStickLeftCalibrate.UseVisualStyleBackColor = true;
+            this.buttonStickLeftCalibrate.Click += new System.EventHandler(this.buttonStick1stCalibrate_Click);
             // 
             // buttonStickRightCalibrate
             // 
@@ -83,8 +84,9 @@
             this.buttonStickRightCalibrate.Name = "buttonStickRightCalibrate";
             this.buttonStickRightCalibrate.Size = new System.Drawing.Size(98, 23);
             this.buttonStickRightCalibrate.TabIndex = 2;
-            this.buttonStickRightCalibrate.Text = "Begin(Right)";
+            this.buttonStickRightCalibrate.Text = "Begin(2nd)";
             this.buttonStickRightCalibrate.UseVisualStyleBackColor = true;
+            this.buttonStickRightCalibrate.Click += new System.EventHandler(this.buttonStick2ndCalibrate_Click);
             // 
             // FormCalibration
             // 
