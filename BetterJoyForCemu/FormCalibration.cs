@@ -51,6 +51,29 @@ namespace BetterJoyForCemu
             {
                 this.buttonStickRightCalibrate.Enabled = true;
             }
+
+
+
+            Int16[] tmp_sensiti;
+            Config.LoadAccSensitivity(joycon.PadMacAddress.ToString(), out tmp_sensiti);
+            for (int i = 0; i < 3; i++)
+            {
+                if (tmp_sensiti[i] != 0)
+                {
+                    checkBoxForceAccSen.Checked = true;
+                    break;
+                }
+            }
+
+            Config.LoadGyroSensitivity(joycon.PadMacAddress.ToString(), out tmp_sensiti);
+            for (int i = 0; i < 3; i++)
+            {
+                if (tmp_sensiti[i] != 0)
+                {
+                    checkBoxForceGyroSen.Checked = true;
+                    break;
+                }
+            }
         }
 
         private void buttonStick1stCalibrate_Click(object sender, EventArgs e)
@@ -80,6 +103,34 @@ namespace BetterJoyForCemu
                 result = MessageBox.Show("Move the stick all axises through its complete range, then click OK.", "Calibarte Stick", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
                 v.FinishCalibrateStick(Joycon.CalibratingStickPhase.ROUND);
                 MessageBox.Show("Analog stick calibartion finished", "Calibarte Stick");
+            }
+        }
+
+        private void checkBoxForceAccSen_CheckedChanged(object sender, EventArgs e)
+        {
+            if (checkBoxForceAccSen.Checked)
+            {
+                Joycon v = this.joycon;
+                Config.SaveAccSensitivity(v.PadMacAddress.ToString(), new Int16[3] { 16384, 16384, 16384 });
+            }
+            else
+            {
+                Joycon v = this.joycon;
+                Config.SaveAccSensitivity(v.PadMacAddress.ToString(), new Int16[3] { 0, 0, 0 });
+            }
+        }
+
+        private void checkBoxForceGyroSen_CheckedChanged(object sender, EventArgs e)
+        {
+            if (checkBoxForceGyroSen.Checked)
+            {
+                Joycon v = this.joycon;
+                Config.SaveGyroSensitivity(v.PadMacAddress.ToString(), new Int16[3] { 13371, 13371, 13371 });
+            }
+            else
+            {
+                Joycon v = this.joycon;
+                Config.SaveGyroSensitivity(v.PadMacAddress.ToString(), new Int16[3] { 0, 0, 0 });
             }
         }
     }

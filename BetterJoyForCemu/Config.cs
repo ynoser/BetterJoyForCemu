@@ -138,5 +138,43 @@ namespace BetterJoyForCemu {
                 calibrationValue[i] = UInt16.Parse(sb.ToString());
             }
         }
+
+        public static void SaveAccSensitivity(string padMac, Int16[] sensitivity)
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                WritePrivateProfileString(padMac, "acc_sensitivity_" + i, sensitivity[i].ToString(), deviceConfigPath);
+            }
+        }
+
+        public static void LoadAccSensitivity(string padMac, out Int16[] sensitivity)
+        {//16384 
+            sensitivity = new Int16[3];
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < 3; i++)
+            {
+                GetPrivateProfileString(padMac, "acc_sensitivity_" + i, "0", sb, 7, deviceConfigPath);
+                sensitivity[i] = Int16.Parse(sb.ToString());
+            }
+        }
+
+        public static void SaveGyroSensitivity(string padMac, Int16[] sensitivity)
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                WritePrivateProfileString(padMac, "gyro_sensitivity_" + i, sensitivity[i].ToString(), deviceConfigPath);
+            }
+        }
+
+        public static void LoadGyroSensitivity(string padMac, out Int16[] sensitivity)
+        {//13371 
+            sensitivity = new Int16[3];
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < 3; i++)
+            {
+                GetPrivateProfileString(padMac, "gyro_sensitivity_" + i, "0", sb, 7, deviceConfigPath);
+                sensitivity[i] = Int16.Parse(sb.ToString());
+            }
+        }
     }
 }

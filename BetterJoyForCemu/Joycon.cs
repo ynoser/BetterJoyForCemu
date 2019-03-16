@@ -1407,7 +1407,44 @@ namespace BetterJoyForCemu {
                 }
             }
 
-            
+            calibration_data_available = false;
+            Int16[] tmp_acc_sensiti;
+            Config.LoadAccSensitivity(this.PadMacAddress.ToString(), out tmp_acc_sensiti);
+
+            for (int i = 0; i < 3; i++)
+            {
+                if (tmp_acc_sensiti[i] != 0)
+                {
+                    calibration_data_available = true;
+                    break;
+                }
+            }
+
+            if(calibration_data_available)
+            {
+                for (int i = 0; i < 3; i++)
+                    acc_sensiti[i] = tmp_acc_sensiti[i];
+            }
+
+            calibration_data_available = false;
+            Int16[] tmp_gyr_sensiti;
+            Config.LoadGyroSensitivity(this.PadMacAddress.ToString(), out tmp_gyr_sensiti);
+
+            for (int i = 0; i < 3; i++)
+            {
+                if (tmp_gyr_sensiti[i] != 0)
+                {
+                    calibration_data_available = true;
+                    break;
+                }
+            }
+
+            if (calibration_data_available)
+            {
+                for (int i = 0; i < 3; i++)
+                    gyr_sensiti[i] = tmp_gyr_sensiti[i];
+            }
+
         }
 
 		private byte[] ReadSPI(byte addr1, byte addr2, uint len, bool print = false) {
