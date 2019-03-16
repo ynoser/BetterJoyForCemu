@@ -7,7 +7,7 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{1BF709E9-C133-41DF-933A-C9FF3F664C7B}</ProjectGuid>
-    <OutputType>WinExe</OutputType>
+    <OutputType>Exe</OutputType>
     <RootNamespace>BetterJoyForCemu</RootNamespace>
     <AssemblyName>BetterJoyForCemu</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
@@ -133,6 +133,12 @@
       <DependentUpon>3rdPartyControllers.cs</DependentUpon>
     </Compile>
     <Compile Include="Config.cs" />
+    <Compile Include="FormCalibration.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="FormCalibration.Designer.cs">
+      <DependentUpon>FormCalibration.cs</DependentUpon>
+    </Compile>
     <Compile Include="HIDapi.cs" />
     <Compile Include="Joycon.cs" />
     <Compile Include="NoiseFilter.cs" />
@@ -171,6 +177,9 @@
   <ItemGroup>
     <EmbeddedResource Include="3rdPartyControllers.resx">
       <DependentUpon>3rdPartyControllers.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="FormCalibration.resx">
+      <DependentUpon>FormCalibration.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>

@@ -753,11 +753,11 @@ namespace BetterJoyForCemu {
                 acc_deadzone[i] = (Int16)(acc_deadzone[i] * 8f);
                 gyr_deadzone[i] = (Int16)(gyr_deadzone[i] * 8f);
             }
-            isCalibrating = true; // Drawing graph conflict with line below
-            Thread.Sleep(500);
+            //isCalibrating = true; // Drawing graph conflict with line below
+            //Thread.Sleep(500);
             Config.SavePadCalibrationData(this.PadMacAddress.ToString(), acc_neutral, gyr_neutral, acc_deadzone, gyr_deadzone);
-            Thread.Sleep(500);
-            isCalibrating = false;
+            //Thread.Sleep(500);
+            //isCalibrating = false;
         }
         private bool isCalibrating = false;
         private const int calibrationLimit = 700;
@@ -777,7 +777,7 @@ namespace BetterJoyForCemu {
 
         private void calibrate(byte[] report_buf, int n = 0)
         {
-            if (calibrationLimit <= calibrationCounter)
+            if (calibrationLimit <= calibrationCounter || !isCalibrating)
             {
                 calibrationCounter = 0;
                 isCalibrating = false;

@@ -103,7 +103,7 @@ namespace BetterJoyForCemu {
 
         public void DrawGraph(int padNum, int axisNum, float max, float value) // min = -max
         {
-            if (checkBoxShowSensors.Checked)
+            if (checkBoxShowSensors.Checked && !isCalibrating)
             {
                 if (InvokeRequired)
                 {
@@ -170,27 +170,24 @@ namespace BetterJoyForCemu {
             }
         }
 
+        private bool isCalibrating = false;
         public void calBtnClick(object sender, EventArgs e)
         {
             Button bb = sender as Button;
 
             if (bb.Tag.GetType() == typeof(Button))
             {
+                isCalibrating = true;
+                checkBoxShowSensors.Enabled = false;
                 Button button = bb.Tag as Button;
 
                 if (button.Tag.GetType() == typeof(Joycon))
                 {
-                    Joycon v = (Joycon)button.Tag;
-                    DialogResult result = MessageBox.Show("Place the controller with the stick facing upward on a flat, stable surface and click OK.", "Calibarte Motion Controls", MessageBoxButtons.OKCancel, MessageBoxIcon.Question);
-                    if (result == DialogResult.OK)
-                    {
-                        Cursor tmp = this.Cursor;
-                        this.Cursor = Cursors.WaitCursor;
-                        v.CalibarteMotionControls();
-                        this.Cursor = tmp;
-                        MessageBox.Show("Calibartion finished", "Calibarte Motion Controls");
-                    }
+                    FormCalibration form = new FormCalibration((Joycon)button.Tag);
+                    form.ShowDialog();
                 }
+
+                isCalibrating = false;
             }
         }
 
