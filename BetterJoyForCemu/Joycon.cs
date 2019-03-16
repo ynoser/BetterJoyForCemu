@@ -737,23 +737,6 @@ namespace BetterJoyForCemu {
         private bool calibrateSecondStick = false;
         public void BeginCalibrateStick(bool isSecondStick, CalibratingStickPhase calibratingStickPhase)
         {
-            /*
-            stick_cal[isLeft ? 0 : 2] = (UInt16)((buf_[1] << 8) & 0xF00 | buf_[0]); // X Axis Max above center
-            stick_cal[isLeft ? 1 : 3] = (UInt16)((buf_[2] << 4) | (buf_[1] >> 4));  // Y Axis Max above center
-            stick_cal[isLeft ? 2 : 4] = (UInt16)((buf_[4] << 8) & 0xF00 | buf_[3]); // X Axis Center
-            stick_cal[isLeft ? 3 : 5] = (UInt16)((buf_[5] << 4) | (buf_[4] >> 4));  // Y Axis Center
-            stick_cal[isLeft ? 4 : 0] = (UInt16)((buf_[7] << 8) & 0xF00 | buf_[6]); // X Axis Min below center
-            stick_cal[isLeft ? 5 : 1] = (UInt16)((buf_[8] << 4) | (buf_[7] >> 4));  // Y Axis Min below center
-            
-            stick2_cal[!isLeft ? 0 : 2] = (UInt16)((buf_[1] << 8) & 0xF00 | buf_[0]); // X Axis Max above center
-            stick2_cal[!isLeft ? 1 : 3] = (UInt16)((buf_[2] << 4) | (buf_[1] >> 4));  // Y Axis Max above center
-            stick2_cal[!isLeft ? 2 : 4] = (UInt16)((buf_[4] << 8) & 0xF00 | buf_[3]); // X Axis Center
-            stick2_cal[!isLeft ? 3 : 5] = (UInt16)((buf_[5] << 4) | (buf_[4] >> 4));  // Y Axis Center
-            stick2_cal[!isLeft ? 4 : 0] = (UInt16)((buf_[7] << 8) & 0xF00 | buf_[6]); // X Axis Min below center
-            stick2_cal[!isLeft ? 5 : 1] = (UInt16)((buf_[8] << 4) | (buf_[7] >> 4));  // Y Axis Min below center
-            */
-            //stick_cal = new UInt16[]{ 0, 0, 0, 0, 0, 0 };
-            //stick2_cal = new UInt16[] { 0, 0, 0, 0, 0, 0 };
             stick_x_max = UInt16.MinValue;
             stick_x_min = UInt16.MaxValue;
             stick_x_sum = 0;
@@ -770,33 +753,6 @@ namespace BetterJoyForCemu {
 
         public void FinishCalibrateStick(CalibratingStickPhase calibratingStickPhase)
         {
-            /*
-            stick_cal[isLeft ? 0 : 2] = (UInt16)((buf_[1] << 8) & 0xF00 | buf_[0]); // X Axis Max above center
-            stick_cal[isLeft ? 1 : 3] = (UInt16)((buf_[2] << 4) | (buf_[1] >> 4));  // Y Axis Max above center
-            stick_cal[isLeft ? 2 : 4] = (UInt16)((buf_[4] << 8) & 0xF00 | buf_[3]); // X Axis Center
-            stick_cal[isLeft ? 3 : 5] = (UInt16)((buf_[5] << 4) | (buf_[4] >> 4));  // Y Axis Center
-            stick_cal[isLeft ? 4 : 0] = (UInt16)((buf_[7] << 8) & 0xF00 | buf_[6]); // X Axis Min below center
-            stick_cal[isLeft ? 5 : 1] = (UInt16)((buf_[8] << 4) | (buf_[7] >> 4));  // Y Axis Min below center
-            
-            stick2_cal[!isLeft ? 0 : 2] = (UInt16)((buf_[1] << 8) & 0xF00 | buf_[0]); // X Axis Max above center
-            stick2_cal[!isLeft ? 1 : 3] = (UInt16)((buf_[2] << 4) | (buf_[1] >> 4));  // Y Axis Max above center
-            stick2_cal[!isLeft ? 2 : 4] = (UInt16)((buf_[4] << 8) & 0xF00 | buf_[3]); // X Axis Center
-            stick2_cal[!isLeft ? 3 : 5] = (UInt16)((buf_[5] << 4) | (buf_[4] >> 4));  // Y Axis Center
-            stick2_cal[!isLeft ? 4 : 0] = (UInt16)((buf_[7] << 8) & 0xF00 | buf_[6]); // X Axis Min below center
-            stick2_cal[!isLeft ? 5 : 1] = (UInt16)((buf_[8] << 4) | (buf_[7] >> 4));  // Y Axis Min below center
-            */
-            //stick_cal = new UInt16[]{ 0, 0, 0, 0, 0, 0 };
-            //stick2_cal = new UInt16[] { 0, 0, 0, 0, 0, 0 };
-            //stick_x_max = UInt16.MinValue;
-            //stick_x_min = UInt16.MaxValue;
-            //stick_x_sum = 0;
-
-            //stick_y_max = UInt16.MinValue;
-            //stick_y_min = UInt16.MaxValue;
-            //stick_y_sum = 0;
-            //calibrateSecondStick = isSecondStick;
-            //Thread.Sleep(500);
-            
             int stickNumber = 0;
             lock (buttons)
             {
@@ -827,55 +783,34 @@ namespace BetterJoyForCemu {
                 {
                     if (isPro && calibrateSecondStick)
                     {
-                        stick2_cal[!isLeft ? 0 : 2] = 2048;
-                        stick2_cal[!isLeft ? 1 : 3] = 2048;
                         UInt16 center_x = stick2_cal[!isLeft ? 2 : 4];
                         UInt16 center_y = stick2_cal[!isLeft ? 3 : 5];
-
-                        //*
                         stick_x_max = (UInt16)((stick_x_max - center_x) * 0.75);
                         stick_y_max = (UInt16)((stick_y_max - center_y) * 0.75);
                         stick_x_min = (UInt16)((center_x - stick_x_min) * 0.75);
-                        stick_y_min = (UInt16)((center_y - stick_y_min) * 0.75);//*/
-                        /*stick_x_max = (UInt16)((stick_x_max - center_x) * 1);
-                        stick_y_max = (UInt16)((stick_y_max - center_y) * 1);
-                        stick_x_min = (UInt16)((center_x - stick_x_min) * 1);
-                        stick_y_min = (UInt16)((center_y - stick_y_min) * 1);*/
+                        stick_y_min = (UInt16)((center_y - stick_y_min) * 0.75);
                         stick2_cal[!isLeft ? 4 : 0] = stick_x_max; // X Axis Max above center
                         stick2_cal[!isLeft ? 5 : 1] = stick_y_max; // Y Axis Max above center
                         stick2_cal[!isLeft ? 2 : 4] = stick_x_min; // X Axis Min below center
                         stick2_cal[!isLeft ? 3 : 5] = stick_y_min; // Y Axis Min below center
-
-                        //stick2_cal[!isLeft ? 0 : 2] = stick_x_max; // X Axis Max above center
-                        //stick2_cal[!isLeft ? 1 : 3] = stick_y_max; // Y Axis Max above center
-                        //stick2_cal[!isLeft ? 4 : 0] = stick_x_min; // X Axis Min below center
-                        //stick2_cal[!isLeft ? 5 : 1] = stick_y_min; // Y Axis Min below center
                         stickNumber = 1;
                         UInt16[] stickRoundCalibration = { stick_x_max, stick_y_max, stick_x_min, stick_y_min };
-                        //UInt16[] stickRoundCalibration = { 1377, 1511, 1616, 1504 };
-
                         Config.SaveStickRoundCalibrationData(this.PadMacAddress.ToString(), stickNumber, stickRoundCalibration);
                     }
                     else
                     {
                         UInt16 center_x = stick_cal[isLeft ? 2 : 4];
                         UInt16 center_y = stick_cal[isLeft ? 3 : 5];
-                        //*
                         stick_x_max = (UInt16)((stick_x_max - center_x) * 0.75);
                         stick_y_max = (UInt16)((stick_y_max - center_y) * 0.75);
                         stick_x_min = (UInt16)((center_x - stick_x_min) * 0.75);
-                        stick_y_min = (UInt16)((center_y - stick_y_min) * 0.75);//*/
-                        /*stick_x_max = (UInt16)((stick_x_max - center_x) * 1);
-                        stick_y_max = (UInt16)((stick_y_max - center_y) * 1);
-                        stick_x_min = (UInt16)((center_x - stick_x_min) * 1);
-                        stick_y_min = (UInt16)((center_y - stick_y_min) * 1);*/
+                        stick_y_min = (UInt16)((center_y - stick_y_min) * 0.75);
                         stick_cal[isLeft ? 0 : 2] = stick_x_max; //x max
                         stick_cal[isLeft ? 1 : 3] = stick_y_max; //y max
                         stick_cal[isLeft ? 4 : 0] = stick_x_min; //x min
                         stick_cal[isLeft ? 5 : 1] = stick_y_min; //y min
                         stickNumber = 0;
                         UInt16[] stickRoundCalibration = { stick_x_max, stick_y_max, stick_x_min, stick_y_min };
-                        //stickRoundCalibratoin = new UInt16[] { 1407, 1531, 1552, 1526 };
                         Config.SaveStickRoundCalibrationData(this.PadMacAddress.ToString(), stickNumber, stickRoundCalibration);
                     }
                 }
@@ -933,11 +868,6 @@ namespace BetterJoyForCemu {
                     stick_x_sum += stick_precal[0];
                     stick_y_sum += stick_precal[1];
 
-                    /*switch (calibratingStickPhase)
-                    {
-                        case CalibratingStickPhase.NONE:
-                            break;
-                    }*/
                     stick_calibrating_counter++;
                 }
             }
